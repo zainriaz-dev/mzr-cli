@@ -1,0 +1,22 @@
+{
+  "api": "https://api.zainriaz.dev",
+  "issuer": "https://sgp.cloud.appwrite.io/v1/oauth2/6a6f965d00257526e315",
+  "clientId": "mzr-bootstrap",
+  "applicationClientId": "mzr-application",
+  "publicKeys": {
+    "mzr-root-2026-10": "MCowBQYDK2VwAyEA/H/uhbaWiaUa2fRDEezxgTXxFkdnAWkinA/pRYU55kQ="
+  },
+  "keyPolicies": {
+    "mzr-root-2026-10": {
+      "notBefore": "2026-10-06T00:00:00.000Z",
+      "notAfter": "2028-10-06T00:00:00.000Z",
+      "revoked": false
+    }
+  },
+  "allowedDownloadOrigins": [
+    "https://sgp.cloud.appwrite.io",
+    "https://downloads.zainriaz.dev"
+  ],
+  "releaseChannel": "stable",
+  "configured": false
+}

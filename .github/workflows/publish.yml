@@ -1,0 +1,36 @@
+# Manual npm publication through npm trusted publishing (OIDC). No npm token is
+# stored in this repository; npm generates provenance for this public repository.
+# Refuses to publish an unconfigured bootstrap or an unconfirmed version.
+name: Publish bootstrap to npm
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package.json version to publish (confirmation)
+        required: true
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing requires npm 11.5.1 or later.
+      - run: npm install --global npm@11
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - name: Refuse unconfigured or unconfirmed releases
+        env:
+          CONFIRM: ${{ inputs.version }}
+        run: |
+          node -e "
+          const c=require('./bootstrap-config.json'),p=require('./package.json');
+          if(c.configured!==true||!c.clientId||!c.applicationClientId||!Object.keys(c.publicKeys).length)throw Error('Bootstrap release gates are not configured');
+          if(process.env.CONFIRM!==p.version)throw Error('Confirmation does not match package.json version');"
+      - run: npm publish --access public

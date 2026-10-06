@@ -1,0 +1,35 @@
+{
+  "name": "@zainriaz-dev/mzr-books",
+  "version": "0.1.0",
+  "description": "Public bootstrap for the private MZR Books team CLI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zainriaz-dev/mzr-cli.git"
+  },
+  "homepage": "https://github.com/zainriaz-dev/mzr-cli#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "mzr": "bin/mzr.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "bootstrap-config.json",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/mzr.mjs"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "undici": "7.30.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
