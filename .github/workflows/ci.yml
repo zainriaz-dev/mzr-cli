@@ -30,9 +30,12 @@ jobs:
         run: |
           npm pack --silent --ignore-scripts
           tarball=$(ls mzrbook-*.tgz)
-          prefix="$RUNNER_TEMP/global"
-          npm install --global --ignore-scripts --prefix "$prefix" "./$tarball"
-          export PATH="$prefix/bin:$prefix:$PATH"
-          mzrbook bootstrap-help
-          mzr bootstrap-help
-          mzrbook doctor --offline
+          project="$RUNNER_TEMP/smoke"
+          mkdir -p "$project"
+          cp "$tarball" "$project/"
+          cd "$project"
+          npm init -y > /dev/null
+          npm install --ignore-scripts "./$tarball"
+          npx --no-install mzrbook bootstrap-help
+          npx --no-install mzr bootstrap-help
+          npx --no-install mzrbook doctor --offline

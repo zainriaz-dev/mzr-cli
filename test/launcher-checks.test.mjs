@@ -27,6 +27,13 @@ test('doctor reports a healthy machine without any sign-in or changes', async ()
   assert.match(checks.find(c => c.name === 'MZR API').detail, /refusing unsigned requests/);
 });
 
+test('doctor accepts an install folder whose parents do not exist yet (fresh machine)', async () => {
+  const config = await read('bootstrap-config.json');
+  const root = path.join(await mkdtemp(path.join(tmpdir(), 'mzr-doctor-')), '.cache', 'mzr-books');
+  const checks = await diagnose({ config, root, platformKey: 'linux-x64', installed: null, fetch: async () => new Response(null, { status: 401 }), offline: true, env: {} });
+  assert.deepEqual(checks.filter(c => !c.ok), []);
+});
+
 test('doctor flags a disabled launcher, a dead service and a stray HTTP answer', async () => {
   const config = await read('bootstrap-config.json');
   const root = path.join(await mkdtemp(path.join(tmpdir(), 'mzr-doctor-')), 'MZRBooks');
