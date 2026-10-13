@@ -29,3 +29,26 @@ test('expiry stops before another token request; cancellation is explicit',async
   const controller=new AbortController();controller.abort();
   await assert.rejects(deviceAuthorize(config,{...f.options,signal:controller.signal}),/cancelled/);
 });
+test('a dropped or busy request while waiting for approval does not abandon the sign-in',async()=>{
+  const f=fixture();const notices=[];const base=f.options.fetch;
+  f.options.notice=line=>notices.push(line);
+  // Token polls: pending, connection reset, gateway error page, then approved.
+  let call=0;f.options.fetch=async(url,init)=>{
+    if(url.endsWith('token')){call++;
+      if(call===2)throw Object.assign(Error('the connection to identity.example.test was interrupted (ECONNRESET)'),{transient:true});
+      if(call===3)return new Response('<html>bad gateway</html>',{status:502});
+      if(call===4)return new Response(JSON.stringify({access_token:'synthetic-access'}),{status:200});
+      return new Response(JSON.stringify({error:'authorization_pending'}),{status:400});
+    }
+    return base(url,init);
+  };
+  assert.equal(await deviceAuthorize(config,f.options),'synthetic-access');
+  assert.equal(notices.length,1);assert.match(notices[0],/still waiting for your approval/);
+});
+test('discovery retries a slow first contact, and denial is named plainly',async()=>{
+  const f=fixture({},[{error:'access_denied'}]);let failures=1;const base=f.options.fetch;const notices=[];
+  f.options.notice=line=>notices.push(line);
+  f.options.fetch=async(url,init)=>{if(url.endsWith('openid-configuration')&&failures-->0)throw Object.assign(Error('identity.example.test did not answer in time'),{transient:true});return base(url,init);};
+  await assert.rejects(deviceAuthorize(config,f.options),/declined in the browser/);
+  assert.match(notices[0],/did not answer in time; trying again in 1s/);
+});

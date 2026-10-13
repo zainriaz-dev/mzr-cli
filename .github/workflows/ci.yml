@@ -1,3 +1,5 @@
+# Runs on every push and pull request. The public repository uses GitHub-hosted
+# runners only. Actions are pinned to full commit SHAs, never to movable tags.
 name: Bootstrap checks
 on: [push, pull_request, workflow_dispatch]
 permissions:
@@ -10,11 +12,27 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run check
-      - run: npm pack --dry-run
+      - run: npm run release:check
+      - run: npm audit --audit-level=low
+      - run: npm audit signatures
+      # Install exactly what would be published, the way a person would, and run it.
+      - name: Install the packed tarball and run it
+        shell: bash
+        run: |
+          npm pack --silent --ignore-scripts
+          tarball=$(ls mzrbook-*.tgz)
+          prefix="$RUNNER_TEMP/global"
+          npm install --global --ignore-scripts --prefix "$prefix" "./$tarball"
+          export PATH="$prefix/bin:$prefix:$PATH"
+          mzrbook bootstrap-help
+          mzr bootstrap-help
+          mzrbook doctor --offline

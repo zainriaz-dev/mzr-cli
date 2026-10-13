@@ -22,7 +22,7 @@ test('direct is isolated, environment opt-in snapshots exclusions and rejects cr
 test('request policy rejects plaintext and redacts low-level proxy failures',async()=>{
   const n=createNetwork({}, {env:{},makeDispatcher:()=>({close:async()=>{}}),fetch:async()=>{throw Error('sensitive fixture error');}});
   await assert.rejects(n.fetch('http://api.test'),/HTTPS/);
-  await assert.rejects(n.fetch('https://api.test'),e=>!e.message.includes('sensitive')&&e.message.includes('Secure bootstrap'));
+  await assert.rejects(n.fetch('https://api.test'),e=>!e.message.includes('sensitive')&&/could not reach api.test/.test(e.message)&&e.transient===true);
   await n.close();
 });
 test('real CONNECT transport does not expose origin authorization to proxy',async()=>{
@@ -31,11 +31,28 @@ test('real CONNECT transport does not expose origin authorization to proxy',asyn
   server.listen(0,'127.0.0.1');await once(server,'listening');
   const n=createNetwork({proxy:`http://127.0.0.1:${server.address().port}`},{env:{}});
   try {
-    await assert.rejects(n.fetch('https://origin.example.test/file',{headers:{Authorization:'Bearer synthetic-origin'},signal:AbortSignal.timeout(3000)}),/Secure bootstrap/);
+    await assert.rejects(n.fetch('https://origin.example.test/file',{headers:{Authorization:'Bearer synthetic-origin'},signal:AbortSignal.timeout(3000)}),/through the configured proxy/);
     assert.equal(observed.url,'origin.example.test:443');assert.equal(observed.headers.authorization,undefined);
   }finally{await n.close();await new Promise(resolve=>server.close(resolve));}
 });
 test('bounded API responses reject malformed JSON without echoing contents',async()=>{
   await assert.rejects(boundedJSON(new Response('sensitive fixture invalid JSON')),e=>!e.message.includes('sensitive'));
   await assert.rejects(boundedJSON(new Response('a'.repeat(1048577))),/too large/);
+});
+test('network failures are named precisely and only transient ones retry',async()=>{
+  const {networkError,retrying}=await import('../lib/network.mjs');
+  const make=code=>Object.assign(new TypeError('fetch failed'),{cause:{code,message:'sensitive detail'}});
+  assert.match(networkError(make('ENOTFOUND'),'api.test').message,/could not look up api.test/);
+  const tls=networkError(make('UNABLE_TO_VERIFY_LEAF_SIGNATURE'),'api.test');
+  assert.match(tls.message,/not trusted.*NODE_EXTRA_CA_CERTS/);assert.equal(tls.transient,false);
+  assert.equal(networkError(make('ECONNRESET'),'api.test').transient,true);
+  const timeout=networkError(Object.assign(Error('x'),{name:'TimeoutError'}),'api.test');
+  assert.match(timeout.message,/did not answer in time/);assert.equal(timeout.transient,true);
+  const user=new AbortController();user.abort();
+  assert.equal(networkError(make('ECONNRESET'),'api.test',user.signal).cancelled,true);
+  for(const code of ['ENOTFOUND','ECONNRESET','CERT_HAS_EXPIRED'])assert.ok(!networkError(make(code),'api.test').message.includes('sensitive'));
+  let calls=0;const delays=[];
+  assert.equal(await retrying(async()=>{if(++calls<3)throw Object.assign(Error('busy'),{transient:true});return 'ok';},{wait:async ms=>delays.push(ms)}),'ok');
+  assert.deepEqual(delays,[1000,2000]);
+  calls=0;await assert.rejects(retrying(async()=>{calls++;throw Error('permanent');},{wait:async()=>{}}),/permanent/);assert.equal(calls,1);
 });

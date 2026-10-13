@@ -20,5 +20,5 @@ test('explicit recovery refuses live installer and recovers a stopped one',async
 });
 test('installer lock rejects contention and releases after errors',async()=>{
  const root=await temporary('mzr-lock-');
- try{await withInstallLock(root,async()=>{await assert.rejects(withInstallLock(root,async()=>{}),/installation is active/)});await assert.rejects(withInstallLock(root,async()=>{throw new Error('fixture failure')}),/fixture failure/);await withInstallLock(root,async()=>saveState(path.join(root,'installation.json'),{current:'fixture'}));assert.equal(JSON.parse(await readFile(path.join(root,'installation.json'))).current,'fixture');}finally{await rm(root,{recursive:true,force:true});}
+ try{await withInstallLock(root,async()=>{await assert.rejects(withInstallLock(root,async()=>{}),/installation is running/)});await assert.rejects(withInstallLock(root,async()=>{throw new Error('fixture failure')}),/fixture failure/);await withInstallLock(root,async()=>saveState(path.join(root,'installation.json'),{current:'fixture'}));assert.equal(JSON.parse(await readFile(path.join(root,'installation.json'))).current,'fixture');}finally{await rm(root,{recursive:true,force:true});}
 });

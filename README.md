@@ -1,47 +1,82 @@
-# MZR Books bootstrap
+# mzrbook
 
-This public npm package contains the launcher, not application binaries. It is
-currently **unpublished and release-gated**. Authentication is initiated only on
-explicit installation or first execution; npm lifecycle scripts are not used.
+Installer and launcher for **MZR Books**, the team book-tracking command line app.
 
-An authorized device flow obtains short-lived private download access. A signed
-manifest and complete binary hash are verified before execution. The trust root
-and public OAuth client ID must be populated by the release process. No backend
-administrator key, user token or Google credential belongs in this package.
+This package is only the launcher. The application itself is private: it is
+downloaded after you sign in, and only for accounts that are active members of
+the MZR Books team.
 
-Node 22+ is required for this route. Windows/WSL installations are independent.
-Direct browser downloads are a separate release gate. Cache cleanup never removes
-the Go client's profile or secure credential store.
+```sh
+npm install --global mzrbook      # or:  npx mzrbook
+mzrbook
+```
 
-Additional local bootstrap actions (not advertised as published npm installs):
+The first run:
 
-- `install-offline --manifest ENVELOPE.json --binary VERIFIED_BINARY`: verify a
-  signed, unexpired manifest and platform hash before copying atomically. This
-  imports software only, not membership or credentials.
-- `unlock --yes`: recover a stopped installer's lock; a live/unknown installer
-  and incomplete lock are never silently removed.
-- `rollback`: reverify the prior manifest and binary before changing atomic state.
+1. checks your Node.js, operating system and processor (Windows, Linux or macOS,
+   on x64 or arm64),
+2. prints a sign-in link and a short code - open it in any browser, on any
+   device, and check the code matches,
+3. downloads the build for your machine and verifies it before it is ever run,
+4. starts MZR Books. After that, `mzrbook` just opens it.
 
-Installation and state changes are locked across processes. Unsafe symlinked
-directories and partial files are refused. Downloads remain resumable and
-authenticated; all complete bytes must match the signed size and SHA-256.
-Explicit proxy support uses pinned Undici with a per-bootstrap dispatcher:
-`--bootstrap-proxy http://proxy.example:8080` or `--bootstrap-proxy-env` for
-HTTP_PROXY/HTTPS_PROXY/NO_PROXY (lowercase takes precedence). Default is direct.
-Proxy URLs with credentials, paths, queries or unsupported schemes are refused;
-authenticated proxy provisioning is not implemented through URL passwords.
-These bootstrap flags are removed before launching the Go application, which
-uses its own standard Go HTTP proxy configuration. TLS verification is never
-disabled; trusted enterprise CAs must be provisioned through the supported Node
-trust configuration by the operator. Low-level transport errors are redacted.
-See [Undici proxy documentation](https://github.com/nodejs/undici/blob/main/docs/docs/api/EnvHttpProxyAgent.md).
+`mzr` is a short alias for the same command.
 
-Resume requires exact signed total/end/length and complete SHA-256. A short body
-stays an untrusted partial for an explicit retry. A complete interrupted partial
-is hashed before atomic recovery, without another download. Purge validates the
-exact cache targets, refuses unknown content and leaves its lock and application
-draft/profile/vault storage intact. Only isolated fixture caches were removed
-during tests; no real installed cache was deleted.
+## Everyday commands
 
-Native permission/enterprise TLS and the published cross-platform installation
-matrix remain release gates. No package has been published by these changes.
+| Command | What it does |
+|---|---|
+| `mzrbook` | Open MZR Books (installs it first if needed). |
+| `mzrbook update [--channel stable\|beta] [--version X.Y.Z]` | Install a newer signed build. When the app is already signed in it updates itself without another browser approval. |
+| `mzrbook install [--no-browser]` | Install without opening the app. |
+| `mzrbook doctor [--offline]` | Check this machine, the installed build and the services. Needs no sign-in and changes nothing. |
+| `mzrbook rollback` | Return to the previous verified build. |
+| `mzrbook unlock --yes` | Clear a lock left by an interrupted install (normally automatic). |
+| `mzrbook uninstall [--purge-cache]` | Remove the launcher's cache. Your drafts, profile and saved sign-in stay. |
+
+Stopping is always safe: Ctrl+C, closing the terminal or losing the connection
+never installs anything unverified, partial downloads resume, and a leftover
+lock clears itself on the next run.
+
+Requires **Node.js 22 or newer**. Behind a proxy:
+`--bootstrap-proxy http://proxy.example:8080`, or `--bootstrap-proxy-env` to use
+`HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`.
+
+## What makes it safe to install
+
+- **No install scripts.** Nothing runs when you `npm install` this package - no
+  `preinstall`, `install`, `postinstall` or `prepare`. It works with
+  `npm install --ignore-scripts` and with npm 12's default of blocking scripts.
+- **One pinned dependency** (`undici`, exact version, integrity-locked), no git or
+  URL dependencies. The published files are an allowlist: `bin/`, `lib/`, a
+  config file and this README.
+- **Published with provenance** from the public repository
+  <https://github.com/zainriaz-dev/mzr-cli> through npm trusted publishing: no
+  long-lived npm token exists, and the version page links to the exact commit
+  and workflow that built it.
+- **Nothing is trusted from the network blindly.** The release list is signed with
+  an Ed25519 key held in Google Cloud KMS. This package pins the public key and
+  verifies the signature, the expiry and the platform entry before downloading;
+  the finished file must match the signed size and SHA-256 or it is deleted and
+  never started.
+- **Private downloads.** The download link is issued only after the sign-in
+  approval, and the launcher refuses any link outside its fixed list of HTTPS
+  hosts. TLS verification is never disabled.
+- **No secrets here.** The package holds no passwords, tokens or keys; the sign-in
+  approval lives only in memory and the installed app keeps its own credentials in
+  your system's secure store.
+
+Report a security problem privately to the repository owners rather than in a
+public issue.
+
+## Where things are installed
+
+| System | Location |
+|---|---|
+| Windows | `%LOCALAPPDATA%\MZRBooks` |
+| macOS | `~/Library/Caches/mzr-books` |
+| Linux | `$XDG_CACHE_HOME/mzr-books` or `~/.cache/mzr-books` |
+
+For offline machines, an administrator can import an already signed build with
+`mzrbook install-offline --manifest ENVELOPE.json --binary FILE`; the same
+signature and hash checks apply, and it grants no membership.

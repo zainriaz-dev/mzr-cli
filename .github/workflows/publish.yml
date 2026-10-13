@@ -1,6 +1,7 @@
 # Manual npm publication through npm trusted publishing (OIDC). No npm token is
-# stored in this repository; npm generates provenance for this public repository.
-# Refuses to publish an unconfigured bootstrap or an unconfirmed version.
+# stored in this repository; npm generates the provenance attestation because
+# this is a public repository. The job waits for the reviewer set on the `npm`
+# environment, refuses an unconfirmed version, and re-runs every release gate.
 name: Publish bootstrap to npm
 on:
   workflow_dispatch:
@@ -16,21 +17,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      # Trusted publishing requires npm 11.5.1 or later.
-      - run: npm install --global npm@11
+      # Trusted publishing requires npm 11.5.1 or later; the version is pinned.
+      - run: npm install --global npm@11.16.0
       - run: npm ci --ignore-scripts
       - run: npm test
-      - name: Refuse unconfigured or unconfirmed releases
+      - run: npm run check
+      - run: npm run release:check
+      - run: npm audit --audit-level=low
+      - run: npm audit signatures
+      - name: Refuse an unconfirmed version
         env:
           CONFIRM: ${{ inputs.version }}
-        run: |
-          node -e "
-          const c=require('./bootstrap-config.json'),p=require('./package.json');
-          if(c.configured!==true||!c.clientId||!c.applicationClientId||!Object.keys(c.publicKeys).length)throw Error('Bootstrap release gates are not configured');
-          if(process.env.CONFIRM!==p.version)throw Error('Confirmation does not match package.json version');"
+        run: node -e "if (process.env.CONFIRM !== require('./package.json').version) throw Error('Confirmation does not match package.json version')"
       - run: npm publish --access public

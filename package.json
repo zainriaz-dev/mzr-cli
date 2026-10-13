@@ -1,18 +1,25 @@
 {
-  "name": "@zainriaz-dev/mzr-books",
-  "version": "0.1.0",
-  "description": "Public bootstrap for the private MZR Books team CLI",
+  "name": "mzrbook",
+  "version": "0.3.0",
+  "description": "Installer and launcher for MZR Books, the team book-tracking CLI: signs you in, then downloads and verifies the right build for your computer",
+  "keywords": ["mzr", "mzrbook", "cli", "launcher", "installer", "books"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zainriaz-dev/mzr-cli.git"
   },
   "homepage": "https://github.com/zainriaz-dev/mzr-cli#readme",
+  "bugs": {
+    "url": "https://github.com/zainriaz-dev/mzr-cli/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22"
   },
+  "os": ["win32", "linux", "darwin"],
+  "cpu": ["x64", "arm64"],
   "bin": {
-    "mzr": "bin/mzr.mjs"
+    "mzr": "bin/mzr.mjs",
+    "mzrbook": "bin/mzrbook.mjs"
   },
   "files": [
     "bin",
@@ -22,14 +29,14 @@
   ],
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/mzr.mjs"
+    "check": "node --check lib/cli.mjs && node --check bin/mzr.mjs && node --check bin/mzrbook.mjs",
+    "release:check": "node scripts/release-check.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {
     "undici": "7.30.0"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   }
 }
