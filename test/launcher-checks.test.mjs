@@ -19,11 +19,12 @@ test('old Node and unsupported machines get one clear sentence', () => {
 test('doctor reports a healthy machine without any sign-in or changes', async () => {
   const config = await read('bootstrap-config.json');
   const seen = [];
-  const fetcher = async url => { seen.push(url); return new Response(null, { status: url.includes('/v1/releases') ? 401 : 200 }); };
+  const fetcher = async url => { seen.push(url); return new Response(null, { status: url.includes('/v1/releases') || url.includes('/v1/links/') ? 401 : 200 }); };
   const root = path.join(await mkdtemp(path.join(tmpdir(), 'mzr-doctor-')), 'MZRBooks');
   const checks = await diagnose({ config: { ...config, configured: true }, root, platformKey: 'win32-x64', installed: null, fetch: fetcher, env: {} });
   assert.deepEqual(checks.filter(c => !c.ok), []);
-  assert.ok(seen.length === 3 && seen.every(url => url.startsWith('https://')));
+  assert.ok(seen.length === 4 && seen.every(url => url.startsWith('https://')));
+  assert.match(checks.find(c => c.name === 'Download link service').detail, /refusing requests without a sign-in/);
   assert.match(checks.find(c => c.name === 'MZR API').detail, /refusing unsigned requests/);
 });
 
@@ -40,7 +41,7 @@ test('doctor flags a disabled launcher, a dead service and a stray HTTP answer',
   const down = async () => { throw Object.assign(new Error('fetch failed'), { cause: { code: 'ENOTFOUND' } }); };
   const checks = await diagnose({ config: { ...config, configured: false }, root, platformKey: 'linux-x64', installed: null, fetch: down, env: { HTTPS_PROXY: 'http://proxy' } });
   const failed = checks.filter(c => !c.ok).map(c => c.name);
-  assert.deepEqual(failed, ['Release channel', 'Sign-in service', 'MZR API', 'Download gateway']);
+  assert.deepEqual(failed, ['Release channel', 'Sign-in service', 'MZR API', 'Download link service', 'Download gateway']);
   assert.match(checks.find(c => c.name === 'Sign-in service').detail, /ENOTFOUND/);
   assert.match(checks.find(c => c.name === 'Proxy').detail, /HTTPS_PROXY/);
   const odd = await diagnose({ config: { ...config, configured: true }, root, platformKey: 'linux-x64', installed: null, fetch: async () => new Response(null, { status: 200 }), env: {} });
@@ -74,6 +75,9 @@ test('install-time scripts, loose dependencies and unsafe lock entries are refus
   has(pkg, 'must be https', lock, { ...config, api: 'http://api.example' });
   has(pkg, 'revoked', lock, { ...config, keyPolicies: { 'mzr-root-2026-10': { ...config.keyPolicies['mzr-root-2026-10'], revoked: true } } });
   has(pkg, 'no release signing key', lock, { ...config, publicKeys: {} });
+  has(pkg, 'linkService must be', lock, { ...config, linkService: 'http://links.example' });
+  has(pkg, 'signedDownloads must pin', lock, { ...config, signedDownloads: { origin: 'https://storage.googleapis.com', pathPrefix: '/x/' } });
+  has(pkg, 'signedDownloads must pin', lock, { ...config, signedDownloads: undefined });
   assert.ok(packageProblems(pkg, lock, config, Date.parse('2030-01-01')).some(p => p.includes('has expired')));
 });
 

@@ -18,5 +18,10 @@
     "https://downloads.zainriaz.dev"
   ],
   "releaseChannel": "stable",
-  "configured": true
+  "configured": true,
+  "linkService": "https://mzr-links-400248484506.asia-south1.run.app",
+  "signedDownloads": {
+    "origin": "https://storage.googleapis.com",
+    "pathPrefix": "/mzrprodg-releases/releases/"
+  }
 }

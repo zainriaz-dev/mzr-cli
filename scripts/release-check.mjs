@@ -50,6 +50,10 @@ export function packageProblems(pkg, lock, config, now = Date.now()) {
   for (const field of ['api', 'issuer', 'clientId', 'applicationClientId']) if (!config[field]) fail(`bootstrap-config.json is missing ${field}`);
   for (const field of ['api', 'issuer']) if (config[field] && !String(config[field]).startsWith('https://')) fail(`${field} must be https`);
   for (const origin of config.allowedDownloadOrigins || []) if (!origin.startsWith('https://')) fail(`download origin ${origin} must be https`);
+  const origin = new RegExp('^https://[a-z0-9.-]+$');
+  if (!origin.test(config.linkService || '')) fail('linkService must be a plain https origin');
+  const signed = config.signedDownloads || {};
+  if (!origin.test(signed.origin || '') || !new RegExp('^/[a-z0-9][a-z0-9._-]*/releases/$').test(signed.pathPrefix || '')) fail('signedDownloads must pin an https storage origin and a /bucket/releases/ path');
   const keys = Object.keys(config.publicKeys || {});
   if (!keys.length) fail('no release signing key is pinned');
   for (const id of keys) {
