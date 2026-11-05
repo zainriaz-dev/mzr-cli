@@ -1,6 +1,6 @@
 {
   "api": "https://api.zainriaz.dev",
-  "issuer": "https://sgp.cloud.appwrite.io/v1/oauth2/6a6f965d00257526e315",
+  "issuer": "https://oauth.zainriaz.dev",
   "clientId": "mzr-bootstrap",
   "applicationClientId": "mzr-application",
   "publicKeys": {
@@ -14,7 +14,7 @@
     }
   },
   "allowedDownloadOrigins": [
-    "https://sgp.cloud.appwrite.io",
+    "https://cloud.sarixxa.com",
     "https://downloads.zainriaz.dev"
   ],
   "releaseChannel": "stable",

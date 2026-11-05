@@ -1,8 +1,15 @@
 {
   "name": "mzrbook",
-  "version": "0.3.0",
+  "version": "0.3.4",
   "description": "Installer and launcher for MZR Books, the team book-tracking CLI: signs you in, then downloads and verifies the right build for your computer",
-  "keywords": ["mzr", "mzrbook", "cli", "launcher", "installer", "books"],
+  "keywords": [
+    "mzr",
+    "mzrbook",
+    "cli",
+    "launcher",
+    "installer",
+    "books"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zainriaz-dev/mzr-cli.git"
@@ -15,8 +22,15 @@
   "engines": {
     "node": ">=22"
   },
-  "os": ["win32", "linux", "darwin"],
-  "cpu": ["x64", "arm64"],
+  "os": [
+    "win32",
+    "linux",
+    "darwin"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
   "bin": {
     "mzr": "bin/mzr.mjs",
     "mzrbook": "bin/mzrbook.mjs"
@@ -34,7 +48,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "undici": "7.30.0"
+    "undici": "7.30.1"
   },
   "publishConfig": {
     "access": "public"

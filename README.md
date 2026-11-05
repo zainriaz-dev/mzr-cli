@@ -32,7 +32,7 @@ The first run:
 | `mzrbook doctor [--offline]` | Check this machine, the installed build and the services. Needs no sign-in and changes nothing. |
 | `mzrbook rollback` | Return to the previous verified build. |
 | `mzrbook unlock --yes` | Clear a lock left by an interrupted install (normally automatic). |
-| `mzrbook uninstall [--purge-cache]` | Remove the launcher's cache. Your drafts, profile and saved sign-in stay. |
+| `mzrbook uninstall [--all]` | Remove the downloaded app. `--all` also removes saved sign-ins, profiles and drafts from this computer. Needs no account or network. Then `npm uninstall -g mzrbook`. |
 
 Stopping is always safe: Ctrl+C, closing the terminal or losing the connection
 never installs anything unverified, partial downloads resume, and a leftover
