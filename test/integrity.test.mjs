@@ -11,7 +11,13 @@ test('signed manifests reject tampering and expired trust',()=>{
  assert.equal(verifyManifest(bytes,signature,'fixture',config).version,'0.1.0');
  assert.throws(()=>verifyManifest(Buffer.from(bytes.toString().replace('0.1.0','9.9.9')),signature,'fixture',config),/signature/);
  const expired=Buffer.from(JSON.stringify({version:'0.1.0',expiresAt:'2000-01-01',assets:{}}));
- assert.throws(()=>verifyManifest(expired,sign(null,expired,privateKey).toString('base64'),'fixture',config),/expired/);
+ const expiredSignature=sign(null,expired,privateKey).toString('base64');
+ assert.throws(()=>verifyManifest(expired,expiredSignature,'fixture',config),/expired/);
+ // An installed program still starts after the date, but a forged or malformed manifest never passes.
+ assert.equal(verifyManifest(expired,expiredSignature,'fixture',config,{allowExpired:true}).version,'0.1.0');
+ assert.throws(()=>verifyManifest(Buffer.from(expired.toString().replace('0.1.0','9.9.9')),expiredSignature,'fixture',config,{allowExpired:true}),/signature/);
+ const undated=Buffer.from(JSON.stringify({version:'0.1.0',assets:{}}));
+ assert.throws(()=>verifyManifest(undated,sign(null,undated,privateKey).toString('base64'),'fixture',config,{allowExpired:true}),/expired/);
 });
 test('resumed downloads verify complete bytes before installation',async()=>{
  // Canonicalize only the test-owned root; macOS /var aliases /private/var.
