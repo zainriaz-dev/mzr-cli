@@ -1,6 +1,6 @@
 {
   "name": "mzrbook",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Installer and launcher for MZR Books, the team book-tracking CLI: signs you in, then downloads and verifies the right build for your computer",
   "keywords": [
     "mzr",

@@ -30,6 +30,7 @@ The first run:
 | `mzrbook update [--channel stable\|beta] [--version X.Y.Z]` | Install a newer signed build. When the app is already signed in it updates itself without another browser approval. |
 | `mzrbook install [--no-browser]` | Install without opening the app. |
 | `mzrbook doctor [--offline]` | Check this machine, the installed build and the services. Needs no sign-in and changes nothing. |
+| `mzrbook --version` (or `-v`) | Print the launcher version and the installed app version. Needs no sign-in or network. |
 | `mzrbook rollback` | Return to the previous verified build. |
 | `mzrbook unlock --yes` | Clear a lock left by an interrupted install (normally automatic). |
 | `mzrbook uninstall [--all]` | Remove the downloaded app. `--all` also removes saved sign-ins, profiles and drafts from this computer. Needs no account or network. Then `npm uninstall -g mzrbook`. |
